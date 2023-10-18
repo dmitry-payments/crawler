@@ -14,7 +14,7 @@ type siteResult struct {
 }
 
 type visitResult struct {
-	sites []siteResult
+	sites map[string]siteResult
 }
 
 var r = regexp.MustCompile(`<a\shref="([^"]+)"`)
@@ -50,14 +50,18 @@ func visit(url string) (*visitResult, error) {
 	}
 	//fmt.Printf("Количество символов:%d\n%s\n", len(body), body[0:1000])
 	allSubMatches := r.FindAllSubmatch(body, -1)
-	result := &visitResult{}
+
+	result := &visitResult{
+		sites: map[string]siteResult{},
+	}
+
 	for _, matches := range allSubMatches {
 		for idx, subMatch := range matches {
 			if idx%2 == 1 {
-				result.sites = append(result.sites, siteResult{
+				result.sites[string(subMatch)] = siteResult{
 					url:        string(subMatch),
 					isRelative: strings.HasPrefix(string(subMatch), "/"),
-				})
+				}
 			}
 		}
 	}
@@ -67,3 +71,7 @@ func visit(url string) (*visitResult, error) {
 func findLinks(subMatches []uint8) {
 
 }
+
+//сделать внутри визит вызов самой себя, при этом изменить визит таким образом что бы рещультат был общим у всей цепочки визитов
+//что бы визит не вызывал саму себя для тех сайтов для которых результат уже есть, так как результаты мы будем записывать в мапу
+//использовать обращения к мапеи
