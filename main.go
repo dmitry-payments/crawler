@@ -20,7 +20,7 @@ func main() {
 
 	result := SiteResult{}
 
-	err := visit("https://go.dev", "/", &result)
+	err := visit("https://go.dev", "/", result)
 
 	if err != nil {
 		fmt.Println("Error!!!", err)
@@ -34,7 +34,7 @@ func main() {
 	}
 }
 
-func visit(host string, url string, result *SiteResult) error {
+func visit(host string, url string, result SiteResult) error {
 	resp, err := http.Get(host + url)
 
 	if err != nil {
@@ -58,19 +58,17 @@ func visit(host string, url string, result *SiteResult) error {
 			if strings.HasPrefix(tempUrl, "<") {
 				continue
 			}
-			// sr := siteResult{
-			// 	url:        string(subMatch),
-			// 	isRelative: strings.HasPrefix(string(subMatch), "/"),
-			// }
 			rel := strings.HasPrefix(tempUrl, "/")
-			_, ok := (*result)[tempUrl]
+			_, ok := result[tempUrl]
 			if !ok && rel {
-				(*result)[tempUrl] = rel
-				fmt.Println("...Scan", tempUrl)
+				result[tempUrl] = rel
+				fmt.Println("Visited", tempUrl, len(result))
+
+				//fmt.Println("...Scan", tempUrl)
 				visit(host, tempUrl, result)
-				fmt.Println("...End Scan")
+				//fmt.Println("...End Scan")
 			} else {
-				fmt.Println("Skip", tempUrl)
+				//fmt.Println("Skip", tempUrl)
 			}
 
 		}
