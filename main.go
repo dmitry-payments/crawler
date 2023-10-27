@@ -8,37 +8,38 @@ import (
 	"strings"
 )
 
-type siteResult struct {
-	url        string
-	isRelative bool
-}
+// type visitResult struct {
+// 	sites map[string]siteResult
+// }
 
-type visitResult struct {
-	sites map[string]siteResult
-}
+type SiteResult map[string]bool
 
 var r = regexp.MustCompile(`<a\shref="([^"]+)"`)
 
 func main() {
-	visitResult, err := visit("https://go.dev/")
+
+	result := SiteResult{}
+
+	err := visit("https://go.dev", "/", &result)
 
 	if err != nil {
 		fmt.Println("Error!!!", err)
 		return
 	}
 
-	for _, sr := range visitResult.sites {
-		if sr.isRelative {
-			fmt.Println(sr.url)
+	for url, rel := range result {
+		if rel {
+			fmt.Println(url)
 		}
 	}
 }
 
-func visit(url string) (*visitResult, error) {
-	resp, err := http.Get(url)
+func visit(host string, url string, result *SiteResult) error {
+	resp, err := http.Get(host + url)
+
 	if err != nil {
 		fmt.Println("Error!!!", err)
-		return nil, err
+		return err
 	}
 
 	defer resp.Body.Close()
@@ -46,26 +47,35 @@ func visit(url string) (*visitResult, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error!!!", err)
-		return nil, err
+		return err
 	}
-	//fmt.Printf("Количество символов:%d\n%s\n", len(body), body[0:1000])
+
 	allSubMatches := r.FindAllSubmatch(body, -1)
 
-	result := &visitResult{
-		sites: map[string]siteResult{},
-	}
-
 	for _, matches := range allSubMatches {
-		for idx, subMatch := range matches {
-			if idx%2 == 1 {
-				result.sites[string(subMatch)] = siteResult{
-					url:        string(subMatch),
-					isRelative: strings.HasPrefix(string(subMatch), "/"),
-				}
+		for _, subMatch := range matches {
+			tempUrl := string(subMatch)
+			if strings.HasPrefix(tempUrl, "<") {
+				continue
 			}
+			// sr := siteResult{
+			// 	url:        string(subMatch),
+			// 	isRelative: strings.HasPrefix(string(subMatch), "/"),
+			// }
+			rel := strings.HasPrefix(tempUrl, "/")
+			_, ok := (*result)[tempUrl]
+			if !ok && rel {
+				(*result)[tempUrl] = rel
+				fmt.Println("...Scan", tempUrl)
+				visit(host, tempUrl, result)
+				fmt.Println("...End Scan")
+			} else {
+				fmt.Println("Skip", tempUrl)
+			}
+
 		}
 	}
-	return result, nil
+	return nil
 }
 
 func findLinks(subMatches []uint8) {
