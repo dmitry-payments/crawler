@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-// type visitResult struct {
-// 	sites map[string]siteResult
-// }
-
 type SiteResult map[string]bool
 
 var r = regexp.MustCompile(`<a\shref="([^"]+)"`)
@@ -63,23 +59,11 @@ func visit(host string, url string, result SiteResult) error {
 			if !ok && rel {
 				result[tempUrl] = rel
 				fmt.Println("Visited", tempUrl, len(result))
-
-				//fmt.Println("...Scan", tempUrl)
 				visit(host, tempUrl, result)
-				//fmt.Println("...End Scan")
 			} else {
-				//fmt.Println("Skip", tempUrl)
 			}
 
 		}
 	}
 	return nil
 }
-
-func findLinks(subMatches []uint8) {
-
-}
-
-//сделать внутри визит вызов самой себя, при этом изменить визит таким образом что бы рещультат был общим у всей цепочки визитов
-//что бы визит не вызывал саму себя для тех сайтов для которых результат уже есть, так как результаты мы будем записывать в мапу
-//использовать обращения к мапеи
